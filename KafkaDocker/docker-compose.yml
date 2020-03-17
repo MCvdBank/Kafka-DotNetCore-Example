@@ -1,0 +1,51 @@
+version: "3.7"
+
+services:
+
+  # ZooKeeper service required to run Kafka
+  zookeeper:
+    image: zookeeper:latest
+    restart: unless-stopped
+    hostname: zookeeper
+    ports:
+      - 2181:2181
+    volumes:
+      - ./volumes/zookeeper/data:/data
+      - ./volumes/zookeeper/datalog:/datalog 
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  # Kafka service exposing a single port externally (9092)
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka
+    ports:
+      - 9092:9092
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+    volumes:
+      - ./volumes/kafka/data:/var/lib/kafka/data
+    depends_on:
+      - zookeeper
+
+  # Kafka service exposing a port externally (29092), and another port internally (9092)
+  # kafka:
+  #  image: confluentinc/cp-kafka:latest
+  #  hostname: kafka
+  #  ports:
+  #    - 9092:9092
+  #    - 29092:29092
+  #  environment:
+  #    - ALLOW_PLAINTEXT_LISTENER=yes
+  #    - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+  #    - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+  #    - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  #    - KAFKA_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+  #    - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+  #  volumes:
+  #    - ./volumes/kafka/data:/var/lib/kafka/data
+  #  depends_on:
+  #    - zookeeper
